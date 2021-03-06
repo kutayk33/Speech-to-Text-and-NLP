@@ -1,9 +1,8 @@
-google_trans_new==1.1.9
-Keras==2.4.3
-pandas==1.1.3
-joblib==0.17.0
-pyodbc==4.0.30
 streamlit==0.73.1
-tensorflow==2.4.1
+google_trans_new==1.1.9
 numpy==1.19.3
+pyodbc==4.0.30
+joblib==0.17.0
+tensorflow==2.4.1
+pandas==1.1.3
 azure_storage==0.37.0
