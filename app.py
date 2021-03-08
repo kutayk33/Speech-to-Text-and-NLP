@@ -170,7 +170,7 @@ def main():
 
     if pat_med == "Patient":
         st.markdown("##  M. Dupont")
-        st.markdown("###  Tension artirielle")
+        st.markdown("###  Tension artérielle")
         tension_sys = st.number_input("Systolique (mmHg)", 60, 200, step=5, key="tension_sys")
         tension_dia = st.number_input("Diastolique (mmHg)", 50, 100, step=5, key="tension_dia")
         if (tension_sys < 80) or (tension_sys > 150) or (tension_dia < 60) or (tension_dia > 85):
@@ -238,7 +238,7 @@ def main():
         st.write("Phrase détectée")
         st.success(row[1])
  
-        st.write('Symptôme détecté')
+        st.write('Symptôme déduit')
         st.success(row[2])
 
         if (proba > 0.8) and (probability[1]>0.8) and (row[2]=='Heart hurts'):
