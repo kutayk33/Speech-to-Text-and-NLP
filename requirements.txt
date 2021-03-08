@@ -8,3 +8,6 @@ streamlit==0.73.1
 azure-storage-blob 12.8.0
 azure_storage==0.37.0
 azure-cognitiveservices-speech==1.15.0
+azure-storage-file-share==12.4.1
+azure-storage-file-datalake==12.3.0
+azure-storage-queue==12.1.5
