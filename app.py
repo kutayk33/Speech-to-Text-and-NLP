@@ -7,6 +7,8 @@ import random, csv, joblib, pyodbc
 import tensorflow as tf 
 import numpy as np
 import streamlit as st
+import warnings
+warnings.filterwarnings("ignore")
 
 ####### Model Text Classifier Requirements #############
 @st.cache(persist=True)
@@ -171,12 +173,16 @@ def main():
     if pat_med == "Patient":
         st.markdown("##  M. Dupont")
         st.markdown("###  Tension artérielle")
-        tension_sys = st.number_input("Systolique (mmHg)", 60, 200, step=5, key="tension_sys")
-        tension_dia = st.number_input("Diastolique (mmHg)", 50, 100, step=5, key="tension_dia")
-        if (tension_sys < 80) or (tension_sys > 150) or (tension_dia < 60) or (tension_dia > 85):
-            st.warning("Votre tension n'est pas normale, consulter votre médecin")
-        if (tension_sys > 170) or (tension_dia > 100):
-            st.warning("Appeler Samu")
+
+        tension_sys = st.number_input("Systolique", 60, 200, step=5, key="tension_sys")
+        tension_dia = st.number_input("Diastolique", 50, 100, step=5, key="tension_dia")
+        if st.button("Calculer Tension"):
+            if (tension_sys < 80) or (tension_sys > 150) or (tension_dia < 60) or (tension_dia > 85):
+                st.warning("Votre tension n'est pas normale, consulter votre médecin")
+            elif (tension_sys > 170) or (tension_dia > 100):
+                st.warning("Appeler Samu")
+            else :
+                st.success('Votre Tension est normale')
 
         if st.button("Décrivez votre symptôme"):
             result = from_mic()
@@ -184,7 +190,8 @@ def main():
             text_en = translatoor(text_fr)            
             scorr, clas = text_classify(text_en)
             label = dict_class[clas]
-
+            st.success(text_fr)
+            st.success(text_en)
             cursor.execute(
             "insert into dbo.Patient(NamePatient, Sentences, Label, Probability) values (?, ?, ?, ?)",
             "M. Dupont",f"{text_fr}", f"{label}", f"{scorr}")
@@ -201,7 +208,7 @@ def main():
         cnxn.commit()
         
         st.sidebar.write("Patient :", row[0])
-        age = st.sidebar.number_input("Age", 65., 130., step=1., key="age")
+        age = st.sidebar.number_input("Age", 45., 130., step=1., key="age")
         st.sidebar.write(" Historique d'hospitalisation :")
         number_medications = st.sidebar.number_input("Number Medications", 16., 75., step=1., key="number_medications")
         number_emergency  = st.sidebar.number_input("Number Emergency", 0., 54., step=1., key="number_emergency")
@@ -212,40 +219,40 @@ def main():
         st.sidebar.write(" Infos sur l'état cardiaque :")
 
         ejection_fraction = st.sidebar.number_input(
-            "Ejection Fraction : Pourcentage de sang quittant le cœur à chaque contraction", 10, 100, step=1, key="ejection_fraction"
+            "Ejection Fraction : Pourcentage de sang quittant le cœur à chaque contraction", 20, 100, step=1, key="ejection_fraction"
         )
         serum_creatinine = st.sidebar.number_input(
-            "Serum Creatinine : Niveau de créatinine sérique dans le sang", 0.1, 10.0, step=0.1, key="serum_creatinine"
+            "Serum Creatinine : Niveau de créatinine sérique dans le sang", 2.0, 10.0, step=0.1, key="serum_creatinine"
         )
-        time = st.sidebar.number_input("Time : Période de suivi (jours)", 1, 300, step=1, key="time")
+        time = st.sidebar.number_input("Time : Période de suivi (jours)", 10, 300, step=1, key="time")
+        if st.button("Analyse"):
+            #Model Cardiaque
+            X_new = np.array([[ejection_fraction, serum_creatinine, time]])
+            model_carqiaque = joblib.load("models/model_cardiaque.pkl")
+            proba = model_carqiaque.predict_proba(X_new)[0][1]
 
-        #Model Cardiaque
-        X_new = np.array([[ejection_fraction, serum_creatinine, time]])
-        model_carqiaque = joblib.load("models/model_cardiaque.pkl")
-        proba = model_carqiaque.predict_proba(X_new)[0][1]
+            # Model Diabet
+            scaler_diabete = joblib.load('models/scaler_diabete.pkl')
+            model_diabete = joblib.load("models/risk_diabete.pkl")
+            X_new1 = np.array([[age, number_medications, number_emergency, number_impatient, emergency_room]])
+            X_new1_scal = scaler_diabete.transform(X_new1)
+            probability = model_diabete.predict_proba(X_new1_scal)[0]
 
-        # Model Diabet
-        scaler_diabete = joblib.load('models/scaler_diabete.pkl')
-        model_diabete = joblib.load("models/risk_diabete.pkl")
-        X_new1 = np.array([[age, number_medications, number_emergency, number_impatient, emergency_room]])
-        X_new1_scal = scaler_diabete.transform(X_new1)
-        probability = model_diabete.predict_proba(X_new1_scal)[0]
+            st.write("Risque de réadmission hospitalière (diabète)")
+            st.success("{} %".format(round(probability[1]*100, 2)))
+            st.write("Risque cardiaque du patient")
+            st.success("{} %".format(round(proba*100, 2)))
+            st.write("Phrase détectée")
+            st.success(row[1])
+    
+            st.write('Symptôme déduit')
+            st.success(row[2])
 
-        st.write("Risque de réadmission hospitalière (diabète)")
-        st.success("{} %".format(round(probability[1]*100, 2)))
-        st.write("Risque cardiaque du patient")
-        st.success("{} %".format(round(proba*100, 2)))
-        st.write("Phrase détectée")
-        st.success(row[1])
- 
-        st.write('Symptôme déduit')
-        st.success(row[2])
+            if ((proba > 0.8) and (probability[1]>0.8)) or (row[2]=='Heart hurts'):
+                st.warning("Attention risque de crise carqiaque imminent")
 
-        if (proba > 0.8) and (probability[1]>0.8) and (row[2]=='Heart hurts'):
-            st.warning("Attention risque de crise carqiaque imminent")
-
-        if (proba > 0.8) and (probability[0]>0.8) and (row[2]=='Heart hurts'):
-            st.warning("Attention le patient présente un risque important de crise cardiaque")
+            if ((proba > 0.8) and (probability[0]>0.8)) or (row[2]=='Heart hurts'):
+                st.warning("Attention le patient présente un risque important de crise cardiaque")
        
 if __name__ == "__main__":
     main()
