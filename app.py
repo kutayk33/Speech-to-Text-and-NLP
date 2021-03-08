@@ -1,10 +1,10 @@
 ################# LIBRARIES #############
+from google_trans_new import google_translator
+import tensorflow as tf 
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 import azure.cognitiveservices.speech as speechsdk
-from google_trans_new import google_translator
 import random, csv, joblib, pyodbc
-import tensorflow as tf 
 import numpy as np
 import streamlit as st
 import warnings
