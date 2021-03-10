@@ -1,6 +1,6 @@
 import smtplib
-email_user = "mk190@students.kiron.ngo"
-email_send = "mk190@students.kiron.ngo"
+email_user = "email"
+email_send = "email"
 server = smtplib.SMTP('smtp.gmail.com', 587)
 server.starttls()
 server.login(email_user, 'passeport')
